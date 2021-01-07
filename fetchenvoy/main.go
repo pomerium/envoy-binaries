@@ -76,13 +76,13 @@ func run(ctx context.Context, tag string) error {
 		outFile := fmt.Sprintf("envoy-linux-%s", arch)
 		err = doGetEnvoy(ctx, client, id, outFile)
 		if err != nil {
+			doCleanup(ctx, client, id) //nolint: err
 			return err
 		}
 
 		// clean up
-		err = client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{})
+		err = doCleanup(ctx, client, id)
 		if err != nil {
-			log.Errorw("error removing container", "error", err)
 			return err
 		}
 
@@ -94,6 +94,16 @@ func run(ctx context.Context, tag string) error {
 		fmt.Printf("%s\n", file)
 	}
 
+	return nil
+}
+
+// remove stopped container
+func doCleanup(ctx context.Context, client *client.Client, id string) error {
+	err := client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{})
+	if err != nil {
+		log.Errorw("error removing container", "error", err)
+		return err
+	}
 	return nil
 }
 
