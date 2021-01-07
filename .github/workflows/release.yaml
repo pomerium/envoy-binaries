@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  upload-binaries:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15.x
+
+      # We need api 1.41 to override platform
+      - name: Install docker stable
+        uses: docker-practice/actions-setup-docker@v1
+        with:
+          docker_channel: stable
+          docker_version: 20.10
+
+      - name: Set up Docker
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Get tag name
+        id: tagName
+        run: |
+          TAG=$(git describe --tags --exact-match)
+          echo ::set-output name=tag::${TAG}
+
+      - name: Run fetchenvoy
+        working-directory: fetchenvoy
+        run: |
+          go run . ${{steps.tagName.outputs.tag}}
+
+      - name: Upload binaries to release
+        working-directory: fetchenvoy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ steps.tagName.outputs.tag }} envoy-*
