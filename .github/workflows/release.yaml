@@ -6,7 +6,33 @@ on:
       - published
 
 jobs:
-  upload-binaries:
+  osx:
+    runs-on: macos-latest
+    steps:
+      - name: envoy deps
+        run: |
+          brew install automake bazelisk cmake coreutils libtool ninja
+      - name: Get tag name
+        id: tagName
+        run: |
+          TAG=$(git describe --tags --exact-match)
+          echo ::set-output name=tag::${TAG}
+      - name: checkout envoy
+        uses: actions/checkout@v2
+        with:
+          repository: envoyproxy/envoy
+          ref: ${{ steps.tagName.outputs.tag }}
+      - name: build
+        run: |
+          bazelisk build --curses=no --show_task_finish --verbose_failures --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH --test_output=all //source/exe:envoy-static
+          mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
+      - name: Upload binaries to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-*
+
+  linux:
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
@@ -39,18 +65,6 @@ jobs:
         working-directory: fetchenvoy
         run: |
           go run . ${{steps.tagName.outputs.tag}}
-
-      - name: Install getenvoy
-        run: |
-          curl -L https://getenvoy.io/cli | bash -s -- -b ~/
-
-      - name: Run getenvoy
-        working-directory: fetchenvoy
-        run: |
-          TAG=${{steps.tagName.outputs.tag}}
-          VERSION=${TAG//v/}
-          ~/getenvoy fetch standard:${VERSION}/darwin
-          cp ~/.getenvoy/builds/standard/${VERSION}/darwin/bin/envoy envoy-darwin-amd64
 
       - name: Upload binaries to release
         working-directory: fetchenvoy
