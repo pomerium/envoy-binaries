@@ -15,7 +15,7 @@ jobs:
       - name: Get tag name
         id: tagName
         run: |
-          TAG=$(git describe --tags --exact-match)
+          TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
       - name: checkout envoy
         uses: actions/checkout@v2
@@ -58,7 +58,7 @@ jobs:
       - name: Get tag name
         id: tagName
         run: |
-          TAG=$(git describe --tags --exact-match)
+          TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
 
       - name: Run fetchenvoy
