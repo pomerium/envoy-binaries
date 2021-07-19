@@ -12,24 +12,29 @@ jobs:
       - name: envoy deps
         run: |
           brew install automake bazelisk cmake coreutils libtool ninja
+
       - name: Get tag name
         id: tagName
         run: |
           TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
+
       - name: checkout envoy
         uses: actions/checkout@v2
         with:
           repository: envoyproxy/envoy
           ref: ${{ steps.tagName.outputs.tag }}
+
       - name: build
         run: |
           bazelisk build --curses=no --show_task_finish --verbose_failures --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH --test_output=all -c "opt" //source/exe:envoy-static --config=sizeopt
           mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
+
       - name: shasum
         run: |
-          shasum -a 256 envoy-darwin-amd64 envoy-darwin-amd64.sha256
-      - name: Upload binaries to release
+          shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
+
+      - name: Upload artifacts to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -70,11 +75,12 @@ jobs:
           go run . ${{steps.tagName.outputs.tag}}
 
       - name: shasum
+        working-directory: fetchenvoy
         run: |
-          shasum -a 256 envoy-linux-amd64 envoy-linux-amd64.sha256
-          shasum -a 256 envoy-linux-arm64 envoy-linux-arm64.sha256
+          shasum -a 256 envoy-linux-amd64 > envoy-linux-amd64.sha256
+          shasum -a 256 envoy-linux-arm64 > envoy-linux-arm64.sha256
 
-      - name: Upload binaries to release
+      - name: Upload artifacts to release
         working-directory: fetchenvoy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
