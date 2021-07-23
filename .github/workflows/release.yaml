@@ -25,9 +25,20 @@ jobs:
           repository: envoyproxy/envoy
           ref: ${{ steps.tagName.outputs.tag }}
 
+      - name: XCode 12 Patching
+        # https://github.com/Homebrew/homebrew-core/pull/81490
+        run: |
+          curl 'https://github.com/envoyproxy/envoy/commit/3b49166dc0841b045799e2c37bdf1ca9de98d5b1.patch?full_index=1' | git am
+
       - name: build
         run: |
-          bazelisk build --curses=no --show_task_finish --verbose_failures --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH --test_output=all -c "opt" //source/exe:envoy-static --config=sizeopt
+          bazelisk build \
+          --curses=no \
+          --show_task_finish \
+          --verbose_failures \
+          --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH \
+          -c "opt" //source/exe:envoy-static --config=sizeopt
+
           mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
 
       - name: shasum
