@@ -9,38 +9,17 @@ jobs:
   osx:
     runs-on: macos-latest
     steps:
-      - name: envoy deps
-        run: |
-          brew install automake bazelisk cmake coreutils libtool ninja
-
       - name: Get tag name
         id: tagName
         run: |
           TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
 
-      - name: checkout envoy
-        uses: actions/checkout@v2
-        with:
-          repository: envoyproxy/envoy
-          ref: ${{ steps.tagName.outputs.tag }}
-
-      - name: XCode 12 Patching
-        # https://github.com/Homebrew/homebrew-core/pull/81490
+      - name: get envoy
         run: |
-          curl 'https://github.com/envoyproxy/envoy/commit/3b49166dc0841b045799e2c37bdf1ca9de98d5b1.patch?full_index=1' | git am
-
-      - name: build
-        run: |
-          bazelisk build \
-          --curses=no \
-          --show_task_finish \
-          --verbose_failures \
-          --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH \
-          -c "opt" //source/exe:envoy-static --config=sizeopt
-
-          mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
-
+          brew install envoy@${TAG}
+          mv /usr/local/bin/envoy envoy-darwin-amd64
+      
       - name: shasum
         run: |
           shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
