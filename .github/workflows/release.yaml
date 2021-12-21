@@ -25,11 +25,6 @@ jobs:
           repository: envoyproxy/envoy
           ref: ${{ steps.tagName.outputs.tag }}
 
-      - name: XCode 12 Patching
-        # https://github.com/Homebrew/homebrew-core/pull/81490
-        run: |
-          curl 'https://github.com/envoyproxy/envoy/commit/3b49166dc0841b045799e2c37bdf1ca9de98d5b1.patch?full_index=1' | git am
-
       - name: build
         run: |
           bazelisk build \
