@@ -13,13 +13,13 @@ jobs:
     steps:
       - name: envoy deps
         run: |
-          brew install automake bazelisk cmake coreutils libtool ninja xcode
+          brew install automake bazelisk cmake coreutils libtool ninja
 
       - name: Get tag name
         id: tagName
         run: |
           # TAG=${GITHUB_REF##*/}
-          TAG=v1.19.3
+          TAG=v1.19.2
           echo ::set-output name=tag::${TAG}
 
       - name: checkout envoy
