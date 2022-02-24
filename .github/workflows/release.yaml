@@ -1,11 +1,9 @@
 name: Release
 
 on:
-  pull_request:
-    
-  # release:
-  #   types:
-  #     - published
+  release:
+    types:
+      - published
 
 jobs:
   osx:
@@ -21,8 +19,7 @@ jobs:
       - name: Get tag name
         id: tagName
         run: |
-          # TAG=${GITHUB_REF##*/}
-          TAG=v1.19.3
+          TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
 
       - name: checkout envoy
@@ -42,59 +39,59 @@ jobs:
 
           mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
 
-      # - name: shasum
-      #   run: |
-      #     shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
+      - name: shasum
+        run: |
+          shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
 
-      # - name: Upload artifacts to release
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-*
+      - name: Upload artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-*
 
-  # linux:
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     DOCKER_CLI_EXPERIMENTAL: "enabled"
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v2
-  #       with:
-  #         go-version: 1.16.x
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
 
-  #     # We need api 1.41 to override platform
-  #     - name: Install docker stable
-  #       uses: docker-practice/actions-setup-docker@v1
-  #       with:
-  #         docker_channel: stable
-  #         docker_version: 20.10
+      # We need api 1.41 to override platform
+      - name: Install docker stable
+        uses: docker-practice/actions-setup-docker@v1
+        with:
+          docker_channel: stable
+          docker_version: 20.10
 
-  #     - name: Set up Docker
-  #       run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Set up Docker
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-  #     - name: Get tag name
-  #       id: tagName
-  #       run: |
-  #         TAG=${GITHUB_REF##*/}
-  #         echo ::set-output name=tag::${TAG}
+      - name: Get tag name
+        id: tagName
+        run: |
+          TAG=${GITHUB_REF##*/}
+          echo ::set-output name=tag::${TAG}
 
-  #     - name: Run fetchenvoy
-  #       working-directory: fetchenvoy
-  #       run: |
-  #         go run . ${{steps.tagName.outputs.tag}}
+      - name: Run fetchenvoy
+        working-directory: fetchenvoy
+        run: |
+          go run . ${{steps.tagName.outputs.tag}}
 
-  #     - name: shasum
-  #       working-directory: fetchenvoy
-  #       run: |
-  #         shasum -a 256 envoy-linux-amd64 > envoy-linux-amd64.sha256
-  #         shasum -a 256 envoy-linux-arm64 > envoy-linux-arm64.sha256
+      - name: shasum
+        working-directory: fetchenvoy
+        run: |
+          shasum -a 256 envoy-linux-amd64 > envoy-linux-amd64.sha256
+          shasum -a 256 envoy-linux-arm64 > envoy-linux-arm64.sha256
 
-  #     - name: Upload artifacts to release
-  #       working-directory: fetchenvoy
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       run: |
-  #         gh release upload ${{ steps.tagName.outputs.tag }} envoy-*
+      - name: Upload artifacts to release
+        working-directory: fetchenvoy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ steps.tagName.outputs.tag }} envoy-*
