@@ -9,6 +9,9 @@ jobs:
   osx:
     runs-on: macos-latest
     steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 12
       - name: envoy deps
         run: |
           brew install automake bazelisk cmake coreutils libtool ninja
