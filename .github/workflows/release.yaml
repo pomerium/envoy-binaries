@@ -2,11 +2,10 @@ name: Release
 
 on:
   release:
-    types:
-      - published
+  pull_request:
 
 jobs:
-  osx:
+  macos:
     runs-on: macos-latest
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
@@ -44,6 +43,7 @@ jobs:
           shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
 
       - name: Upload artifacts to release
+        if: ${{ github.event_name == 'release' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -90,6 +90,7 @@ jobs:
           shasum -a 256 envoy-linux-arm64 > envoy-linux-arm64.sha256
 
       - name: Upload artifacts to release
+        if: ${{ github.event_name == 'release' }}
         working-directory: fetchenvoy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
