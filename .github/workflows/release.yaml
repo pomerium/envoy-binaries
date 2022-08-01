@@ -9,7 +9,7 @@ jobs:
   osx:
     runs-on: macos-latest
     steps:
-      - uses: maxim-lobanov/setup-xcode@v1
+      - uses: maxim-lobanov/setup-xcode@4aa4176a819ae7c019451acfda0bba67bffc6704
         with:
           xcode-version: 12
       - name: envoy deps
@@ -23,7 +23,7 @@ jobs:
           echo ::set-output name=tag::${TAG}
 
       - name: checkout envoy
-        uses: actions/checkout@v2
+        uses: actions/checkout@7884fcad6b5d53d10323aee724dc68d8b9096a2e
         with:
           repository: envoyproxy/envoy
           ref: ${{ steps.tagName.outputs.tag }}
@@ -55,16 +55,16 @@ jobs:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@7884fcad6b5d53d10323aee724dc68d8b9096a2e
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492
         with:
-          go-version: 1.16.x
+          go-version: 1.18.x
 
       # We need api 1.41 to override platform
       - name: Install docker stable
-        uses: docker-practice/actions-setup-docker@v1
+        uses: docker-practice/actions-setup-docker@2d1d86c7fd8177d36a51a328528c79aae2bcb1fe
         with:
           docker_channel: stable
           docker_version: 20.10
