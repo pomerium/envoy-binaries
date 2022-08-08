@@ -64,7 +64,7 @@ jobs:
 
       # We need api 1.41 to override platform
       - name: Install docker stable
-        uses: docker-practice/actions-setup-docker@2d1d86c7fd8177d36a51a328528c79aae2bcb1fe
+        uses: docker-practice/actions-setup-docker@5d9a5f65f510c01ec5f0bd81d5c95768b1ec032a
         with:
           docker_channel: stable
           docker_version: 20.10
