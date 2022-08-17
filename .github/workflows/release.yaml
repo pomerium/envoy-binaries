@@ -4,6 +4,7 @@ on:
   release:
     types:
       - published
+  pull_request:
 
 jobs:
   osx:
@@ -32,7 +33,6 @@ jobs:
         run: |
           bazelisk build \
           --curses=no \
-          --show_task_finish \
           --verbose_failures \
           --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH \
           -c "opt" //source/exe:envoy-static --config=sizeopt
