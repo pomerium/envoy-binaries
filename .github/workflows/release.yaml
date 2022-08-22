@@ -24,7 +24,7 @@ jobs:
           echo ::set-output name=tag::${TAG}
 
       - name: checkout envoy
-        uses: actions/checkout@7884fcad6b5d53d10323aee724dc68d8b9096a2e
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
         with:
           repository: envoyproxy/envoy
           ref: ${{ steps.tagName.outputs.tag }}
@@ -55,7 +55,7 @@ jobs:
       DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
-        uses: actions/checkout@7884fcad6b5d53d10323aee724dc68d8b9096a2e
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
 
       - name: Set up Go
         uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a
