@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: maxim-lobanov/setup-xcode@9a697e2b393340c3cacd97468baa318e4c883d98
         with:
-          xcode-version: 12
+          xcode-version: 14.1
       - name: envoy deps
         run: |
           brew install automake bazelisk cmake coreutils libtool ninja
