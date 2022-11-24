@@ -10,44 +10,23 @@ jobs:
   osx:
     runs-on: macos-latest
     steps:
-      - uses: maxim-lobanov/setup-xcode@9a697e2b393340c3cacd97468baa318e4c883d98
-        with:
-          xcode-version: 14.1
-      - name: envoy deps
-        run: |
-          brew install automake bazelisk cmake coreutils libtool ninja
-
       - name: Get tag name
         id: tagName
         run: |
           TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
 
-      - name: checkout envoy
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-        with:
-          repository: envoyproxy/envoy
-          ref: ${{ steps.tagName.outputs.tag }}
-
       - name: build
         run: |
-          bazelisk build \
-          --curses=no \
-          --verbose_failures \
-          --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH \
-          -c "opt" //source/exe:envoy-static --config=sizeopt
+          brew install oras
 
-          mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
-
-      - name: shasum
-        run: |
-          shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
+          sh ./mac.sh ${{ steps.tagName.outputs.tag }}
 
       - name: Upload artifacts to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-*
+          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-darwin-*
 
   linux:
     runs-on: ubuntu-latest
