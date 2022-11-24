@@ -20,6 +20,10 @@ jobs:
         run: |
           brew install oras
 
+          pwd
+
+          ls
+
           sh ./mac.sh ${{ steps.tagName.outputs.tag }}
 
       - name: Upload artifacts to release
