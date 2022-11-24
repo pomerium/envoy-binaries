@@ -18,6 +18,8 @@ jobs:
 
       - name: build
         run: |
+          set -x
+          
           brew install oras
 
           # homebrew doesn't use v, just a number triplet
