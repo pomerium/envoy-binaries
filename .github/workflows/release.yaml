@@ -4,7 +4,7 @@ on:
   release:
     types:
       - published
-  pull_request:
+  pull_request: {}
 
 jobs:
   osx:
@@ -13,7 +13,7 @@ jobs:
       - name: Get tag name
         id: tagName
         run: |
-          TAG=${GITHUB_REF##*/}
+          TAG=${GITHUB_REF_NAME}
           echo ::set-output name=tag::${TAG}
 
       - name: build
