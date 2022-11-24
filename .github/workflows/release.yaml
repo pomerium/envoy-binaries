@@ -24,6 +24,7 @@ jobs:
 
           # homebrew doesn't use v, just a number triplet
           _version=${{ steps.tagName.outputs.tag }}
+          _version=v1.24.0
           _version=${_version:1}
 
           echo ref ${GITHUB_REF}
