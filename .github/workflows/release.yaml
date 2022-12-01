@@ -4,50 +4,55 @@ on:
   release:
     types:
       - published
-  pull_request:
 
 jobs:
   osx:
     runs-on: macos-latest
     steps:
-      - uses: maxim-lobanov/setup-xcode@9a697e2b393340c3cacd97468baa318e4c883d98
-        with:
-          xcode-version: 14.1
-      - name: envoy deps
-        run: |
-          brew install automake bazelisk cmake coreutils libtool ninja
-
       - name: Get tag name
         id: tagName
         run: |
           TAG=${GITHUB_REF##*/}
           echo ::set-output name=tag::${TAG}
 
-      - name: checkout envoy
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-        with:
-          repository: envoyproxy/envoy
-          ref: ${{ steps.tagName.outputs.tag }}
-
       - name: build
         run: |
-          bazelisk build \
-          --curses=no \
-          --verbose_failures \
-          --action_env=PATH=/usr/local/bin:/opt/local/bin:/usr/bin:/bin:$PATH \
-          -c "opt" //source/exe:envoy-static --config=sizeopt
+          set -x
+          
+          brew install oras
 
-          mv bazel-bin/source/exe/envoy-static envoy-darwin-amd64
+          # homebrew doesn't use v, just a number triplet
+          _version=${{ steps.tagName.outputs.tag }}
+          _version=${_version:1}
 
-      - name: shasum
-        run: |
+          echo ref ${GITHUB_REF}
+          echo ref_name ${GITHUB_REF_NAME}
+          
+          # AMD64 is not supported beyond 12.6
+          oras pull ghcr.io/homebrew/core/envoy:${_version} --platform "darwin/amd64:macOS 12.6"
+          tar --extract \
+              --file envoy--${_version}.monterey.bottle.tar.gz \
+              --directory . \
+              --strip-components=3 \
+              envoy/${_version}/bin/envoy
+          mv -f envoy envoy-darwin-amd64
+
+          oras pull ghcr.io/homebrew/core/envoy:${_version} --platform "darwin/arm64:macOS 13"
+          tar --extract \
+              --file envoy--${_version}.arm64_ventura.bottle.tar.gz \
+              --directory . \
+              --strip-components=3 \
+              envoy/${_version}/bin/envoy
+          mv -f envoy envoy-darwin-arm64
+
           shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
+          shasum -a 256 envoy-darwin-arm64 > envoy-darwin-arm64.sha256
 
       - name: Upload artifacts to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-*
+          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-darwin-*
 
   linux:
     runs-on: ubuntu-latest
