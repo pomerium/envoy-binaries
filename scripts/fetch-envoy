@@ -1,0 +1,79 @@
+#!/bin/bash
+set -euo pipefail
+
+_envoy_tag="${1?"envoy_tag required"}"
+_os="${2?"os is required"}"
+_arch="${3?"arch is required"}"
+
+_project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/.."
+_bin_dir="${_project_root}/bin"
+
+download_undock() {
+    _host_os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    _host_arch="$(uname -m)"
+    _url="https://github.com/crazy-max/undock/releases/download/v0.4.0/undock_0.4.0_${_host_os}_${_host_arch}.tar.gz"
+
+    mkdir -p "$_bin_dir"
+    curl \
+        --silent \
+        --fail \
+        --show-error \
+        --compressed \
+        --location \
+        --time-cond "$_bin_dir/undock.tar.gz" \
+        --output "$_bin_dir/undock.tar.gz" \
+        "$_url"
+    (cd "$_bin_dir" && tar -xzf undock.tar.gz)
+    chmod +x "$_bin_dir/undock"
+}
+
+extract_envoy_from_docker() {
+    _tmp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_dir')"
+    "$_bin_dir/undock" \
+        --platform="$_os/$_arch" \
+        --include=/usr/local/bin/envoy \
+        "envoyproxy/envoy:$_envoy_tag" \
+        "$_tmp_dir"
+    cp -f "$_tmp_dir/usr/local/bin/envoy" "$_bin_dir/envoy-$_os-$_arch"
+    rm -rf "$_tmp_dir"
+}
+
+extract_envoy_from_homebrew() {
+    _version="${_envoy_tag:1}"
+    _tmp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_dir')"
+
+    if [ "$_arch" == "arm64" ]; then
+        (
+            cd "$_tmp_dir"
+            oras pull "ghcr.io/homebrew/core/envoy:${_version}" --platform "darwin/arm64"
+            tar --extract \
+                --file envoy--*.bottle.tar.gz \
+                --directory . \
+                --strip-components=3 \
+                "envoy/${_version}/bin/envoy"
+        )
+    else
+        (
+            cd "$_tmp_dir"
+            oras pull ghcr.io/homebrew/core/envoy:"${_version}" --platform "darwin/amd64"
+            tar --extract \
+                --file envoy--*.bottle.tar.gz \
+                --directory . \
+                --strip-components=3 \
+                "envoy/${_version}/bin/envoy"
+        )
+    fi
+    mv -f "$_tmp_dir/envoy" "$_bin_dir/envoy-$_os-$_arch"
+}
+
+extract_envoy() {
+    if [ "$_os" == "linux" ]; then
+        extract_envoy_from_docker
+    else
+        extract_envoy_from_homebrew
+    fi
+    shasum -a 256 "$_bin_dir/envoy-$_os-$_arch" >"$_bin_dir/envoy-$_os-$_arch".sha256
+}
+
+download_undock
+extract_envoy

@@ -1,102 +1,41 @@
 name: Release
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      envoyVersion:
+        description: "Envoy Version"
+        required: true
 
 jobs:
-  osx:
-    runs-on: macos-latest
-    steps:
-      - name: Get tag name
-        id: tagName
-        run: |
-          TAG=${GITHUB_REF##*/}
-          echo ::set-output name=tag::${TAG}
-
-      - name: build
-        run: |
-          set -x
-          
-          brew install oras
-
-          # homebrew doesn't use v, just a number triplet
-          _version=${{ steps.tagName.outputs.tag }}
-          _version=${_version:1}
-
-          echo ref ${GITHUB_REF}
-          echo ref_name ${GITHUB_REF_NAME}
-          
-          # AMD64 is not supported beyond 12.6
-          oras pull ghcr.io/homebrew/core/envoy:${_version} --platform "darwin/amd64:macOS 12.6"
-          tar --extract \
-              --file envoy--${_version}.monterey.bottle.tar.gz \
-              --directory . \
-              --strip-components=3 \
-              envoy/${_version}/bin/envoy
-          mv -f envoy envoy-darwin-amd64
-
-          oras pull ghcr.io/homebrew/core/envoy:${_version} --platform "darwin/arm64:macOS 13"
-          tar --extract \
-              --file envoy--${_version}.arm64_ventura.bottle.tar.gz \
-              --directory . \
-              --strip-components=3 \
-              envoy/${_version}/bin/envoy
-          mv -f envoy envoy-darwin-arm64
-
-          shasum -a 256 envoy-darwin-amd64 > envoy-darwin-amd64.sha256
-          shasum -a 256 envoy-darwin-arm64 > envoy-darwin-arm64.sha256
-
-      - name: Upload artifacts to release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release -R pomerium/envoy-binaries upload ${{ steps.tagName.outputs.tag }} envoy-darwin-*
-
-  linux:
+  release:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_CLI_EXPERIMENTAL: "enabled"
     steps:
       - name: Checkout
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
-
-      - name: Set up Go
-        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9
         with:
-          go-version: 1.18.x
+          fetch-depth: 0
 
-      # We need api 1.41 to override platform
-      - name: Install docker stable
-        uses: docker-practice/actions-setup-docker@5d9a5f65f510c01ec5f0bd81d5c95768b1ec032a
-        with:
-          docker_channel: stable
-          docker_version: 20.10
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18
 
-      - name: Set up Docker
-        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c
 
-      - name: Get tag name
-        id: tagName
+      - name: Install homebrew
         run: |
-          TAG=${GITHUB_REF##*/}
-          echo ::set-output name=tag::${TAG}
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          brew install oras
 
-      - name: Run fetchenvoy
-        working-directory: fetchenvoy
+      - name: fetch envoy
         run: |
-          go run . ${{steps.tagName.outputs.tag}}
-
-      - name: shasum
-        working-directory: fetchenvoy
-        run: |
-          shasum -a 256 envoy-linux-amd64 > envoy-linux-amd64.sha256
-          shasum -a 256 envoy-linux-arm64 > envoy-linux-arm64.sha256
+          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} darwin amd64
+          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} darwin arm64
+          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} linux amd64
+          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} linux arm64
 
       - name: Upload artifacts to release
-        working-directory: fetchenvoy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.tagName.outputs.tag }} envoy-*
+          gh release upload ${{ github.event.inputs.envoyVersion }} bin/envoy-*
