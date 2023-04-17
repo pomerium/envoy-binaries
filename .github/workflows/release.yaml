@@ -1,16 +1,22 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      envoyVersion:
-        description: "Envoy Version"
-        required: true
+  pull_request:
+  release:
+    types:
+      - published
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: tag name
+        id: tagName
+        run: |
+          TAG=${GITHUB_REF##*/}
+          # echo ::set-output name=tag::${TAG}
+          echo ::set-output name=tag::v1.25.5
+
       - name: Checkout
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
         with:
@@ -30,13 +36,13 @@ jobs:
 
       - name: fetch envoy
         run: |
-          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} darwin amd64
-          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} darwin arm64
-          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} linux amd64
-          ./scripts/fetch-envoy ${{ github.event.inputs.envoyVersion }} linux arm64
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} darwin amd64
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} darwin arm64
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} linux amd64
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} linux arm64
 
       - name: Upload artifacts to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ github.event.inputs.envoyVersion }} bin/envoy-*
+          gh release upload ${{ steps.tagName.outputs.tag }} bin/envoy-*
