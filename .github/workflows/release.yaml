@@ -1,7 +1,6 @@
 name: Release
 
 on:
-  pull_request:
   release:
     types:
       - published
@@ -14,8 +13,7 @@ jobs:
         id: tagName
         run: |
           TAG=${GITHUB_REF##*/}
-          # echo ::set-output name=tag::${TAG}
-          echo "tag=v1.25.5" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
@@ -45,4 +43,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.tagName.outputs.tag }} bin/envoy-*
+          gh release upload ${{ steps.tagName.outputs.tag }} bin/envoy-* --clobber
