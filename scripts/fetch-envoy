@@ -10,7 +10,10 @@ _bin_dir="${_project_root}/bin"
 
 download_undock() {
     _host_os="$(uname -s | tr '[:upper:]' '[:lower:]')"
-    _host_arch="$(uname -m)"
+    _host_arch="amd64"
+    if [ "$(uname -m)" == "arm64" ]; then
+        _host_arch="arm64"
+    fi
     _url="https://github.com/crazy-max/undock/releases/download/v0.4.0/undock_0.4.0_${_host_os}_${_host_arch}.tar.gz"
 
     mkdir -p "$_bin_dir"
