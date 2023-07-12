@@ -75,7 +75,10 @@ extract_envoy() {
     else
         extract_envoy_from_homebrew
     fi
-    shasum -a 256 "$_bin_dir/envoy-$_os-$_arch" >"$_bin_dir/envoy-$_os-$_arch".sha256
+    (
+        cd "$_bin_dir"
+        shasum -a 256 "envoy-$_os-$_arch" >"envoy-$_os-$_arch".sha256
+    )
 }
 
 download_undock
