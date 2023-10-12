@@ -32,15 +32,18 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install oras
 
-      - name: fetch envoy
-        run: |
-          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} darwin amd64
-          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} darwin arm64
-          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} linux amd64
-          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} linux arm64
-
-      - name: Upload artifacts to release
+      - name: fetch and upload envoy (linux)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.tagName.outputs.tag }} bin/envoy-* --clobber
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} linux amd64
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} linux arm64
+          gh release upload ${{ steps.tagName.outputs.tag }} bin/envoy-linux-* --clobber
+
+      - name: fetch and upload envoy (darwin)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} darwin amd64
+          ./scripts/fetch-envoy ${{ steps.tagName.outputs.tag }} darwin arm64
+          gh release upload ${{ steps.tagName.outputs.tag }} bin/envoy-darwin-* --clobber
