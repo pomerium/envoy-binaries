@@ -45,27 +45,19 @@ extract_envoy_from_homebrew() {
     _version="${_envoy_tag:1}"
     _tmp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_dir')"
 
-    if [ "$_arch" == "arm64" ]; then
-        (
-            cd "$_tmp_dir"
-            oras pull "ghcr.io/homebrew/core/envoy:${_version}" --platform "darwin/arm64"
-            tar --extract \
-                --file envoy--*.bottle.tar.gz \
-                --directory . \
-                --strip-components=3 \
-                "envoy/${_version}/bin/envoy"
-        )
-    else
-        (
-            cd "$_tmp_dir"
-            oras pull ghcr.io/homebrew/core/envoy:"${_version}" --platform "darwin/amd64"
-            tar --extract \
-                --file envoy--*.bottle.tar.gz \
-                --directory . \
-                --strip-components=3 \
-                "envoy/${_version}/bin/envoy"
-        )
-    fi
+    (
+        cd "$_tmp_dir"
+        _digest=$(oras manifest fetch "ghcr.io/homebrew/core/envoy:${_version}" |
+            jq -r ".manifests |
+                map(select(.platform | contains({os: \"$_os\", architecture: \"$_arch\"}))) |
+                min_by(.platform[\"os.version\"]) | .digest")
+        oras pull "ghcr.io/homebrew/core/envoy:${_version}@${_digest}"
+        tar --extract \
+            --file envoy--*.bottle.tar.gz \
+            --directory . \
+            --strip-components=3 \
+            "envoy/${_version}/bin/envoy"
+    )
     mv -f "$_tmp_dir/envoy" "$_bin_dir/envoy-$_os-$_arch"
 }
 
