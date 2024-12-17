@@ -42,7 +42,7 @@ jobs:
 
       - name: fetch and upload our built envoy (darwin)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN}}
+          GH_TOKEN: ${{ secrets.APPARITOR_GITHUB_TOKEN }}
         run: |
           gh release download -R pomerium/envoy-build ${{ steps.tagName.outputs.tag }}
           gh release upload ${{ steps.tagName.outputs.tag }} envoy-darwin-* --clobber
